@@ -1,0 +1,31 @@
+const User = require("../models/userModel");
+const Ticket = require("../models/ticketModel");
+
+// 🧾 Lấy toàn bộ danh sách người dùng (Admin only)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ❌ Xoá người dùng (chỉ nếu không có vé active)
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const activeTickets = await Ticket.find({ user: userId, status: "active" });
+
+    if (activeTickets.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "Cannot delete user with active parking tickets." });
+    }
+
+    await User.findByIdAndDelete(userId);
+    res.json({ message: "User deleted successfully." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
